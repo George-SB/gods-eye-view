@@ -64,16 +64,22 @@ async function loadPackFile(name) {
   // Node needs to load the same files under node:test (same pattern as
   // naturalEarthRegions.js / neighborhoodPolygons.js). One path, so no node:
   // import reaches the browser.
-  const mod = name === 'countries'
-    ? await import('./local_data/gazetteer/countries.json', { with: { type: 'json' } })
-    : await import('./local_data/gazetteer/cities.json', { with: { type: 'json' } });
+  const mod =
+    name === 'countries'
+      ? await import('./local_data/gazetteer/countries.json', {
+          with: { type: 'json' },
+        })
+      : await import('./local_data/gazetteer/cities.json', {
+          with: { type: 'json' },
+        });
   return mod.default || mod;
 }
 
 function indexPut(index, key, entry) {
   if (!key) return;
   const list = index.get(key);
-  if (list) list.push(entry); else index.set(key, [entry]);
+  if (list) list.push(entry);
+  else index.set(key, [entry]);
 }
 
 /**
@@ -105,7 +111,10 @@ const loadIndex = createRetryableLoader(async () => {
   // first entry is already the most-likely intended match for a shared name.
   const cityIndex = new Map();
   for (const city of cityPack.cities || []) {
-    for (const key of new Set([normalizeName(city.name), normalizeName(city.nameAscii)])) {
+    for (const key of new Set([
+      normalizeName(city.name),
+      normalizeName(city.nameAscii),
+    ])) {
       indexPut(cityIndex, key, city);
     }
   }

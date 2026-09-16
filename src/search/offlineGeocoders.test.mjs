@@ -247,5 +247,9 @@ test('the gazetteer only answers once every network provider has missed', async 
   asked.length = 0;
   const preset = await search.geocode('austin');
   assert.equal(preset.place.label, 'Austin');
-  assert.deepEqual(asked, [], 'a preset hit reaches neither network nor gazetteer');
+  assert.deepEqual(
+    asked,
+    [],
+    'a preset hit reaches neither network nor gazetteer',
+  );
 });
