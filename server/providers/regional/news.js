@@ -1,5 +1,5 @@
 import { fetchRegionalText, fetchRegionalJson } from './http.js';
-import { normalizeRegionalArticles } from '../../../src/data/regionalBrief.js';
+import { normalizeRegionalArticles } from '../../../src/data/regionalModel.js';
 
 function decodeRssText(value) {
   return String(value || '')
@@ -61,6 +61,16 @@ async function fetchRegionalNews(place) {
   const query = place?.locality || place?.region || place?.country;
   if (!query)
     return { status: 'unavailable', query: null, articles: [], source: null };
+
+  // Regional-news outcalls disabled on this branch: both sources below send
+  // the tracked contact's resolved locality to a third party (Google News /
+  // GDELT) on every cockpit Local Info / Regional News view. Commented out
+  // rather than deleted so re-enabling is a one-line uncomment. The caller
+  // (briefing.js's regionalBriefHasAnySource) already treats 'unavailable'
+  // as a normal, handled outcome — place/weather still populate the panel.
+  return { status: 'unavailable', query, articles: [], source: null };
+
+  /*
   const rssParams = new URLSearchParams({
     q: String(query).replace(/["\\]/g, ' ').trim(),
     hl: 'en-US',
@@ -79,7 +89,7 @@ async function fetchRegionalNews(place) {
     if (articles.length)
       return { status: 'ready', query, articles, source: 'Google News RSS' };
   } catch {
-    /* fall through to the existing free index */
+    // fall through to the existing free index
   }
   const params = new URLSearchParams({
     query: `"${String(query).replace(/["\\]/g, ' ').trim()}"`,
@@ -107,6 +117,7 @@ async function fetchRegionalNews(place) {
   } catch {
     return { status: 'unavailable', query, articles: [], source: null };
   }
+  */
 }
 
 export { fetchRegionalNews };

@@ -1,27 +1,19 @@
+import { readShellSource, shellMethod } from './testSupport/readShellSource.mjs';
+import { expandApplicationHtml } from '../build/application-html.js';
+import { StyleManager } from './ui/applicationShell.js';
 import { createHoverDisclosure, collapsePanelOnEscape } from './ui/panelDisclosure.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
 // Exercise the installed event routes and central close method, without WebGL.
-const source = readFileSync(new URL('./ui.js', import.meta.url), 'utf8');
-const markup = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const source = readShellSource();
+const markup = expandApplicationHtml(readFileSync(new URL('../index.html', import.meta.url), 'utf8'));
 const locationMarkup = markup.slice(markup.indexOf('<div id="location-bar"'), markup.indexOf('<div id="left-panel-stack"'));
 const locationToggleMarkup = locationMarkup.match(/<button\b([^>]*\bid="location-bar-toggle"[^>]*)>([\s\S]*?)<\/button>/);
 const locationToggleAttributes = Object.fromEntries(
   [...(locationToggleMarkup?.[1] || '').matchAll(/([\w-]+)="([^"]*)"/g)].map((match) => [match[1], match[2]]),
 );
-const initStart = source.indexOf('  _initAutoHoverPanel(');
-const initEnd = source.indexOf('  /**\n   * Sets up drag-to-reposition', initStart);
-const escapeStart = source.indexOf('  _collapsePanelOnEscape(');
-const escapeEnd = source.indexOf('  _initCommandDockPins(', escapeStart);
-const closeStart = source.indexOf('  setPanelCollapsed(panelId, collapsed, {');
-const closeEnd = source.indexOf('  /**\n   * Toggles "clean view"', closeStart);
-const syncStart = source.indexOf('  _syncPanelCollapseButton(panelEl) {');
-const syncEnd = source.indexOf('  /**\n   * Converts a panel', syncStart);
-assert.ok(initStart >= 0 && initEnd > initStart && escapeStart >= 0 && escapeEnd > escapeStart
-  && closeStart >= 0 && closeEnd > closeStart);
-assert.ok(syncStart >= 0 && syncEnd > syncStart);
 
 function harness({ hidden = false, selected = true, noChips = false } = {}) {
   let now = 0;
@@ -116,13 +108,15 @@ function harness({ hidden = false, selected = true, noChips = false } = {}) {
   window.performance = { now: () => now };
   document.defaultView = window;
   const methods = new Function('createHoverDisclosure', 'collapsePanelOnEscape', 'document', 'window', 'clearTimeout', 'performance', 'requestAnimationFrame',
-    `return ({${source.slice(initStart, initEnd)},\n${source.slice(escapeStart, escapeEnd)},\n${source.slice(closeStart, closeEnd)},\n${source.slice(syncStart, syncEnd)}});`)(
+    `return ({${shellMethod('_initAutoHoverPanel').toString()},\n${shellMethod('_collapsePanelOnEscape').toString()},\n${shellMethod('setPanelCollapsed').toString()},\n${shellMethod('_syncPanelCollapseButton').toString()}});`)(
     createHoverDisclosure, collapsePanelOnEscape, document, window, (id) => timers.delete(id), { now: () => now }, () => {},
   );
   const saves = [];
   const claims = [];
   let shareSyncs = 0;
   const manager = {
+    _lifetime: { frame() {} },
+    _panelLayout: { _leftStackPreferredPanelId: null, _rightStackPreferredPanelId: null },
     ...methods,
     _savePanelCollapsedState(...args) { saves.push(args); },
     _scheduleLeftPanelLayout() {}, _scheduleRightPanelLayout() {},
