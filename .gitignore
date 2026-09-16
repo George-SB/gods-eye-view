@@ -12,3 +12,12 @@ output/
 3d-models/
 pinokio/ENVIRONMENT
 pinokio/.installed
+
+# IDE / editor state (local to a machine, not project config)
+.idea/
+.vscode/
+.claude/
+
+# OS cruft
+Thumbs.db
+*:Zone.Identifier

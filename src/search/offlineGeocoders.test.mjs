@@ -1,13 +1,14 @@
-// OFFLINE GEOCODERS — the two providers that answer with no key and no request,
-// and their place in the chain. What matters here is that they answer only what
-// they are certain of, hand everything else on, and produce the box shape the
-// camera framing actually reads.
+// OFFLINE GEOCODERS — the three providers that answer with no key and no
+// request, and their place in the chain. What matters here is that they
+// answer only what they are certain of, hand everything else on, and produce
+// the box shape the camera framing actually reads.
 //
 // Run with: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCoordinateGeocoder } from './coordinateGeocoder.js';
 import { createPresetGeocoder } from './presetGeocoder.js';
+import { createGazetteerGeocoder } from './gazetteerGeocoder.js';
 import { createPlaceSearch } from './placeSearch.js';
 
 const PRESETS = {
@@ -182,10 +183,69 @@ test('a cancelled search stops the offline providers too', async () => {
   for (const geocoder of [
     createCoordinateGeocoder(),
     createPresetGeocoder({ presets: PRESETS }),
+    createGazetteerGeocoder(),
   ]) {
     await assert.rejects(
       geocoder.geocode('austin', { signal: controller.signal }),
       (error) => error.name === 'AbortError',
     );
   }
+});
+
+test('the gazetteer resolves a bundled country/city in the shape the chain expects', async () => {
+  const geocoder = createGazetteerGeocoder();
+  const country = (await geocoder.geocode('Australia')).place;
+  assert.equal(country.label, 'Australia');
+  assert.deepEqual(country.types, ['country']);
+  // lookupGazetteer() returns `lon`; the adapter must translate to the
+  // `lng` key every other provider and the camera-framing code use.
+  assert.equal(typeof country.lng, 'number');
+  assert.equal('lon' in country, false);
+  assert.ok(country.viewport.southwest.lat < country.viewport.northeast.lat);
+
+  const city = (await geocoder.geocode('Tokyo')).place;
+  assert.deepEqual(city.types, ['locality']);
+  assert.equal(typeof city.lng, 'number');
+});
+
+test('a query the gazetteer has never heard of answers null, not a throw', async () => {
+  const geocoder = createGazetteerGeocoder();
+  const outcome = await geocoder.geocode('Not A Real Place Xyzzy');
+  assert.equal(outcome.place, null);
+  assert.equal(outcome.answered, true);
+});
+
+test('the gazetteer only answers once every network provider has missed', async () => {
+  const asked = [];
+  const alwaysMisses = (name) => ({
+    async geocode(query) {
+      asked.push(`${name}:${query}`);
+      return { place: null, answered: true };
+    },
+  });
+  const search = createPlaceSearch({
+    providers: [
+      createCoordinateGeocoder(),
+      createPresetGeocoder({ presets: PRESETS }),
+      alwaysMisses('google'),
+      alwaysMisses('photon'),
+      alwaysMisses('nominatim'),
+      createGazetteerGeocoder(),
+    ],
+  });
+
+  const result = await search.geocode('Australia');
+  assert.equal(result.place.label, 'Australia');
+  assert.deepEqual(
+    asked,
+    ['google:Australia', 'photon:Australia', 'nominatim:Australia'],
+    'every live provider is asked, in order, before the offline fallback',
+  );
+
+  // A bundled preset still wins ahead of the gazetteer — narrower data that
+  // answers first is preferred over the broader data placed last.
+  asked.length = 0;
+  const preset = await search.geocode('austin');
+  assert.equal(preset.place.label, 'Austin');
+  assert.deepEqual(asked, [], 'a preset hit reaches neither network nor gazetteer');
 });

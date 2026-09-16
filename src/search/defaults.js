@@ -6,6 +6,7 @@ import { createGoogleGeocoder } from './google.js';
 import { createPhotonGeocoder } from '../keylessGeocoder.js';
 import { createCoordinateGeocoder } from './coordinateGeocoder.js';
 import { createPresetGeocoder } from './presetGeocoder.js';
+import { createGazetteerGeocoder } from './gazetteerGeocoder.js';
 
 /**
  * Coordinates and bundled names first — both answer offline and with no key —
@@ -71,6 +72,9 @@ export function createDefaultPlaceSearch({
               },
             }),
           ]),
+      // Always last, whichever primary path is configured above: the one
+      // provider in this chain with no network dependency at all.
+      createGazetteerGeocoder(),
     ],
   });
   const operations = createHttpGeospatialProvider({

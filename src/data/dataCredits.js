@@ -265,6 +265,14 @@ export const DATA_CREDITS = [
       '<a href="https://www.submarinecablemap.com" target="_blank" rel="noopener">submarinecablemap.com</a> ' +
       '(CC BY-NC-SA 3.0 — NonCommercial)',
   },
+  {
+    key: 'gazetteer',
+    html:
+      'Offline place search (last-resort fallback when Google/Photon/Nominatim ' +
+      'are all unconfigured or unreachable): ' +
+      '<a href="https://www.naturalearthdata.com" target="_blank" rel="noopener">Natural Earth</a> ' +
+      '(public domain)',
+  },
 ];
 
 /**
