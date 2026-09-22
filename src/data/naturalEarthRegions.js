@@ -11,9 +11,10 @@
  *
  * PURE data module — no Cesium imports, node-testable. The packs are lazy-
  * loaded on first lookup and cached in module scope (bbox/area computed once
- * at load). In the browser Vite bundles the JSON via dynamic import; under
- * node the same files are read from disk. A failed load is retried on the
- * next lookup rather than cached (see `createRetryableLoader`).
+ * at load). In the browser the JSON is fetched from its resolved asset URL;
+ * under node the same files are read from disk (see `loadPackFile`). A
+ * failed load is retried on the next lookup rather than cached (see
+ * `createRetryableLoader`).
  */
 
 import { createRetryableLoader } from './retryableLoad.js';
@@ -120,19 +121,39 @@ function suffixVariants(norm) {
 /** @type {Array|null} flat entry list for listRegions() */
 let _entries = null;
 
+/**
+ * Load one pack as plain JSON via its resolved asset URL (Vite's "explicit
+ * URL imports" — new URL(spec, import.meta.url)), not a JSON module import.
+ *
+ * `import(spec, { with: { type: 'json' } })` is deliberately NOT used here:
+ * for a statically-analyzable specifier, Vite's import-analysis plugin
+ * rewrites it to a `?import`-suffixed URL that comes back
+ * `Content-Type: text/javascript`, which the browser then refuses to load as
+ * a JSON module ("Failed to fetch dynamically imported module" /
+ * "Expected a JSON module script..."). fetch() of a plain asset URL never
+ * goes through that rewrite and works identically in the browser and under
+ * `node --test` (a `file:` URL is fetch-able directly since Node 18). Same
+ * pattern as gazetteer.js.
+ */
 async function loadPackFile(base) {
-  // Vite bundles these JSON files as modules; the import attribute is what Node
-  // needs to load the same files under node:test (same pattern as
-  // neighborhoodPolygons.js). One path, so no node: import reaches the browser.
-  const mod =
-    base === 'regions'
-      ? await import('./local_data/natural_earth/regions.json', {
-          with: { type: 'json' },
-        })
-      : await import('./local_data/natural_earth/marine.json', {
-          with: { type: 'json' },
-        });
-  return mod.default || mod;
+  const url = new URL(
+    `./local_data/natural_earth/${base}.json`,
+    import.meta.url,
+  );
+  if (typeof window !== 'undefined') {
+    const res = await fetch(url);
+    return res.json();
+  }
+  // node:test — Node's fetch() has no `file:` scheme support, so read the
+  // file directly instead. The specifier is built at runtime (never a static
+  // string literal) so Rollup's production build can't see it and externalize
+  // it as a browser stub — this branch never runs in the browser anyway,
+  // guarded by the `typeof window` check above.
+  const fs = await import(/* @vite-ignore */ ['node', 'fs/promises'].join(':'));
+  const { fileURLToPath } = await import(
+    /* @vite-ignore */ ['node', 'url'].join(':')
+  );
+  return JSON.parse(await fs.readFile(fileURLToPath(url), 'utf8'));
 }
 
 function buildEntries(pack, kind) {

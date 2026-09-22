@@ -17,12 +17,45 @@ const CITY_FILES = [
   {
     id: 'san-francisco',
     bbox: [-122.55, 37.7, -122.35, 37.84],
-    loader: () =>
-      import('./local_data/neighborhoods/san-francisco.json', {
-        with: { type: 'json' },
-      }),
+    file: 'san-francisco',
   },
 ];
+
+/**
+ * Load one city pack as plain JSON via its resolved asset URL (Vite's
+ * "explicit URL imports" — new URL(spec, import.meta.url)), not a JSON
+ * module import.
+ *
+ * `import(spec, { with: { type: 'json' } })` is deliberately NOT used here:
+ * for a statically-analyzable specifier, Vite's import-analysis plugin
+ * rewrites it to a `?import`-suffixed URL that comes back
+ * `Content-Type: text/javascript`, which the browser then refuses to load as
+ * a JSON module ("Failed to fetch dynamically imported module" /
+ * "Expected a JSON module script..."). fetch() of a plain asset URL never
+ * goes through that rewrite and works identically in the browser and under
+ * `node --test` (a `file:` URL is fetch-able directly since Node 18). Same
+ * pattern as gazetteer.js / naturalEarthRegions.js.
+ */
+async function loadPackFile(file) {
+  const url = new URL(
+    `./local_data/neighborhoods/${file}.json`,
+    import.meta.url,
+  );
+  if (typeof window !== 'undefined') {
+    const res = await fetch(url);
+    return res.json();
+  }
+  // node:test — Node's fetch() has no `file:` scheme support, so read the
+  // file directly instead. The specifier is built at runtime (never a static
+  // string literal) so Rollup's production build can't see it and externalize
+  // it as a browser stub — this branch never runs in the browser anyway,
+  // guarded by the `typeof window` check above.
+  const fs = await import(/* @vite-ignore */ ['node', 'fs/promises'].join(':'));
+  const { fileURLToPath } = await import(
+    /* @vite-ignore */ ['node', 'url'].join(':')
+  );
+  return JSON.parse(await fs.readFile(fileURLToPath(url), 'utf8'));
+}
 
 /**
  * city id → memoized loader. Failures are NOT memoized: a transient
@@ -107,10 +140,7 @@ function cityLoader(city) {
   let loader = _cityLoaders.get(city.id);
   if (!loader) {
     loader = createRetryableLoader(async () => {
-      // One path for both runtimes: Vite bundles the JSON as a module, and the
-      // import attribute is what Node needs to load the same file under node:test.
-      const mod = await city.loader();
-      const fc = mod.default || mod;
+      const fc = await loadPackFile(city.file);
       return Array.isArray(fc.features) ? fc.features : [];
     });
     _cityLoaders.set(city.id, loader);
