@@ -2009,9 +2009,6 @@ body.cockpit-mode #intel-hud .hud-summary {
 body.cockpit-mode #intel-hud .hud-left-edge {
   left: 22px;
 }
-body.cockpit-mode #intel-hud .hud-right-edge {
-  right: 22px;
-}
 
 @media (max-width: 760px) {
   #view-switcher {

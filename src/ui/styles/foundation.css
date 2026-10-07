@@ -595,19 +595,9 @@ body:has(.data-toggle-row[data-layer-id='alpr-cameras'] .data-toggle-btn.active)
   height: 100%;
 }
 
-#title-bar .title-accent,
 .loader-content .title-accent {
   color: var(--accent);
   font-weight: 300;
-}
-
-#title-bar .subtitle {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 5px;
-  color: var(--text-dim);
-  margin-top: 8px;
-  text-transform: uppercase;
 }
 
 #title-bar .frame-rate-readout {
