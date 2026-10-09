@@ -173,12 +173,6 @@
   right: 36px;
 }
 
-.hud-bracket {
-  font-size: 22px;
-  line-height: 1;
-  opacity: 0.6;
-}
-
 .hud-content {
   font-size: 13px;
   letter-spacing: 2px;
@@ -196,22 +190,8 @@
   opacity: 0.95;
 }
 
-.hud-mode {
-  font-size: 16px;
-  font-weight: 700;
-  letter-spacing: 4px;
-  margin-top: 3px;
-}
-
 .hud-summary-wrap {
-  margin-top: 6px;
   max-width: 420px;
-}
-
-.hud-summary-label {
-  font-size: 9px;
-  letter-spacing: 1.8px;
-  opacity: 0.55;
 }
 
 .hud-summary {
@@ -228,24 +208,6 @@
 .hud-rec {
   font-size: 13px;
   letter-spacing: 2px;
-}
-
-/* Edge annotations (vertical text) */
-.hud-edge {
-  position: absolute;
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  opacity: 0.5;
-}
-
-.hud-left-edge {
-  left: 36px;
-  top: 50%;
-  transform: translateY(-50%) rotate(-90deg);
-  transform-origin: left center;
-  white-space: nowrap;
-  display: flex;
-  gap: 20px;
 }
 
 #intel-hud[data-variant='tactical'] .hud-bottom-bar {
@@ -279,13 +241,8 @@
   background: rgba(0, 0, 0, 0.36);
 }
 
-#intel-hud[data-variant='operator'] .hud-bracket {
-  display: none;
-}
-
 #intel-hud[data-variant='minimal'] .hud-top-right,
-#intel-hud[data-variant='minimal'] .hud-bottom-right,
-#intel-hud[data-variant='minimal'] .hud-left-edge {
+#intel-hud[data-variant='minimal'] .hud-bottom-right {
   display: none;
 }
 
