@@ -93,7 +93,6 @@ const PAINT_LANE_INDEX = new Map(
  */
 export const WORLD_OVERLAY_OCCLUDER_SELECTORS = Object.freeze([
   '#title-bar',
-  '#style-indicator',
   '#top-center-actions',
   '#traffic-sync-chip',
   '#cctv-sync-chip',

@@ -608,35 +608,3 @@ body:has(.data-toggle-row[data-layer-id='alpr-cameras'] .data-toggle-btn.active)
   letter-spacing: 1px;
   color: var(--accent);
 }
-
-/* ── Style Indicator ──────────────────────────── */
-#style-indicator {
-  position: fixed;
-  top: 32px;
-  right: 36px;
-  z-index: 100;
-  pointer-events: none;
-  user-select: none;
-  text-align: right;
-}
-
-#style-indicator .indicator-label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 3px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-}
-
-#style-indicator .indicator-value {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 5px;
-  color: var(--accent);
-  margin-top: 4px;
-  text-shadow: 0 0 20px var(--accent-glow);
-  transition: var(--transition-smooth);
-}

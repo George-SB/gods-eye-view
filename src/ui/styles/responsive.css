@@ -35,10 +35,6 @@
     transform: none;
   }
 
-  #style-indicator {
-    display: none;
-  }
-
   #title-bar h1 {
     font-size: 16px;
     letter-spacing: 4px;
@@ -87,10 +83,6 @@
   .hud-top-right,
   .hud-bottom-right {
     right: 16px;
-  }
-
-  .hud-left-edge {
-    display: none;
   }
 
   .hud-bottom-bar {

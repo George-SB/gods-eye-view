@@ -19,21 +19,6 @@ function locationSearchHandler() {
   return ui.slice(start, end);
 }
 
-test('the ACTIVE STYLE indicator is written from the style name and nothing else', () => {
-  // A free-text location search used to write the searched CITY into the
-  // top-right style slot, so the corner read "ACTIVE STYLE / TOKYO".
-  const writes = [...ui.matchAll(/this\._styleIndicator\.textContent\s*=/g)];
-  assert.equal(writes.length, 1, 'the style indicator must have exactly one writer');
-  assert.match(
-    ui.slice(writes[0].index, writes[0].index + 160),
-    /this\._styleIndicator\.textContent =\s*displayNames\[styleName\] \|\| styleName\.toUpperCase\(\);/,
-  );
-
-  const handler = locationSearchHandler();
-  assert.doesNotMatch(handler, /_styleIndicator/, 'location search must not touch the style indicator');
-  assert.doesNotMatch(handler, /active-style-name/, 'location search must not touch the style indicator');
-});
-
 test('a free-text search records its destination for the LOCATION mini-status', () => {
   const handler = locationSearchHandler();
   // The destination has to be recorded BEFORE _setActiveLocation(null), whose

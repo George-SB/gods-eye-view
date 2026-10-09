@@ -2,9 +2,8 @@
        both the chip and this dialog outright when /api/setup/status is not
        there to answer (prod builds, LAN visitors). Rows are rendered from
        that payload, so the key registry lives in src/keySetupCore.mjs alone. -->
-  <button id="key-setup-chip" type="button" hidden aria-haspopup="dialog" aria-controls="key-setup">
+  <button id="key-setup-chip" type="button" hidden aria-haspopup="dialog" aria-controls="key-setup" aria-label="API keys" title="API keys">
     <span class="material-symbols-outlined" aria-hidden="true">bolt</span>
-    <span data-key-setup-chip-label>POWER UP</span>
   </button>
   <aside id="key-setup" role="dialog" aria-labelledby="key-setup-title" aria-describedby="key-setup-description" hidden>
     <div class="key-setup-scanline" aria-hidden="true"></div>

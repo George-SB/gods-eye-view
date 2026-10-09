@@ -104,6 +104,7 @@ export class IntelHUD {
     this._visible = false;
     this._autoMode = true; // auto show/hide based on style
     this._currentStyle = 'normal';
+    this._modeLabel = 'NORMAL';
     this._el = null;
     this._variant = 'tactical';
     this._updateInterval = null;
@@ -171,11 +172,8 @@ export class IntelHUD {
 
     this._el.innerHTML = `
       <div class="hud-corner hud-top-left">
-        <div class="hud-bracket">┌</div>
         <div class="hud-content">
-          <div class="hud-mode" id="hud-mode">NORMAL</div>
           <div class="hud-summary-wrap">
-            <div class="hud-summary-label">SUMMARY</div>
             <div class="hud-summary" id="hud-summary">Awaiting telemetry...</div>
           </div>
         </div>
@@ -185,11 +183,9 @@ export class IntelHUD {
         <div class="hud-content" style="text-align:right">
           <div class="hud-rec"><span id="hud-timestamp">2026-01-01 00:00:00Z</span></div>
         </div>
-        <div class="hud-bracket">┐</div>
       </div>
 
       <div class="hud-corner hud-bottom-left">
-        <div class="hud-bracket">└</div>
         <div class="hud-content">
           <div id="hud-mgrs">MGRS: ---</div>
           <div id="hud-latlon">--°--'--"N ---°--'--"W</div>
@@ -202,12 +198,6 @@ export class IntelHUD {
           <div id="hud-alt">ALT: --m   SUN: --° EL</div>
           <div id="hud-ais-vessel" class="hud-ais-vessel">AIS: --</div>
         </div>
-        <div class="hud-bracket">┘</div>
-      </div>
-
-      <div class="hud-edge hud-left-edge">
-        <div id="hud-coll">COLL: --:--:--Z</div>
-        <div id="hud-ona">ONA: --°</div>
       </div>
 
       <div class="hud-bottom-bar">
@@ -354,22 +344,10 @@ export class IntelHUD {
     if (altEl)
       altEl.textContent = `ALT: ${Math.round(altMslM)}m   SUN: ${sunEl.toFixed(1)}° EL`;
 
-    // Collection timestamp
-    const collEl = document.getElementById('hud-coll');
-    if (collEl) {
-      const now = new Date();
-      const h = String(now.getUTCHours()).padStart(2, '0');
-      const m = String(now.getUTCMinutes()).padStart(2, '0');
-      const s = String(now.getUTCSeconds()).padStart(2, '0');
-      collEl.textContent = `COLL: ${h}:${m}:${s}Z`;
-    }
-
     // Off-nadir angle (ONA): camera pitch of -90 deg is nadir (straight down),
     // so ONA = 90 + pitch gives 0 at nadir and increases toward the horizon.
     const pitchDeg = Cesium.Math.toDegrees(camera.pitch);
     const ona = Math.max(0, 90 + pitchDeg);
-    const onaEl = document.getElementById('hud-ona');
-    if (onaEl) onaEl.textContent = `ONA: ${ona.toFixed(1)}°`;
 
     // `altM` stays the raw ellipsoidal camera height the sensor model reads
     // (GSD/NIIRS, view band). `altMslM` is the ADDITIVE display datum — the
@@ -595,8 +573,7 @@ export class IntelHUD {
     const m = this._latestMetrics;
     if (!m) return 'Awaiting telemetry...';
 
-    const modeEl = document.getElementById('hud-mode');
-    const modeLabel = modeEl?.textContent || 'NORMAL';
+    const modeLabel = this._modeLabel;
     const region = this._regionLabel(m.latDeg, m.lonDeg);
     const nearest = this._nearestKnownPoint(m.latDeg, m.lonDeg);
     const band = this._viewBand(m.altM);
@@ -764,12 +741,9 @@ export class IntelHUD {
   onStyleChange(styleName) {
     this._currentStyle = styleName;
 
-    // Update mode label
-    const modeEl = document.getElementById('hud-mode');
-    if (modeEl) {
-      const modeNames = { surveillance: 'NVG', thermal: 'FLIR', retro: 'CRT' };
-      modeEl.textContent = modeNames[styleName] || styleName.toUpperCase();
-    }
+    // Mode label used by the summary line
+    const modeNames = { surveillance: 'NVG', thermal: 'FLIR', retro: 'CRT' };
+    this._modeLabel = modeNames[styleName] || styleName.toUpperCase();
     // Update color scheme
     const colors = HUD_COLORS[styleName] || HUD_COLORS._default;
     if (this._el) {
