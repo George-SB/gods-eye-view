@@ -2,7 +2,6 @@
 export function readShellElements(document = globalThis.document) {
   return {
     _rightPanelStack: document.getElementById('right-context-rail'),
-    _styleIndicator: document.getElementById('active-style-name'),
     _sliderPanel: document.getElementById('param-slider-panel'),
     _sliderContainer: document.getElementById('param-sliders'),
     _ppToggles: document.getElementById('pp-toggles'),

@@ -1477,10 +1477,6 @@ export class VisualSettings {
       btn.classList.toggle('active', btn.dataset.style === styleName);
     });
 
-    // Update style indicator
-    const displayNames = { surveillance: 'NVG', thermal: 'FLIR', retro: 'CRT' };
-    this._styleIndicator.textContent =
-      displayNames[styleName] || styleName.toUpperCase();
     this._updateStyleMiniStatus(styleName);
 
     // Update parameter sliders

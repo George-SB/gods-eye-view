@@ -198,7 +198,6 @@ export async function initKeySetup({
   const rowsHost = root.querySelector('[data-key-setup-rows]');
   const applyButton = root.querySelector('[data-key-setup-apply]');
   const closeButton = root.querySelector('[data-key-setup-close]');
-  const chipLabel = chip.querySelector('[data-key-setup-chip-label]') || chip;
   const statusLine = root.querySelector('[data-key-setup-status]');
   const defaultStatusText = statusLine?.textContent || '';
   let busy = false;
@@ -207,7 +206,9 @@ export async function initKeySetup({
   const render = (nextStatus) => {
     if (disposed) return;
     status = nextStatus;
-    chipLabel.textContent = keySetupChipLabel(status);
+    const chipLabel = keySetupChipLabel(status);
+    chip.title = chipLabel;
+    chip.setAttribute('aria-label', chipLabel);
     // Fully powered is the owner's clean screen: the chip retires. The dialog
     // stays reachable this session (and via ?setup=1) to swap or verify keys.
     chip.hidden = status.setCount >= status.total;

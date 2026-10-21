@@ -200,7 +200,6 @@ export class StyleManager extends ShellFacade {
         _sharpenSliderValue: this._sharpenSliderValue,
         _sliderContainer: this._sliderContainer,
         _sliderPanel: this._sliderPanel,
-        _styleIndicator: this._styleIndicator,
         _styleMiniValue: this._styleMiniValue,
       },
       operations: {

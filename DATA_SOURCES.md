@@ -81,7 +81,7 @@ How to read this:
 - **Re:Earth Terrain.** Keyless (no API key). Used two ways: (1) `src/mapStackController.js` swaps in a `Cesium.CesiumTerrainProvider` pointed at Re:Earth's `cesium-mesh/ellipsoid` quantized-mesh endpoint for globe stacks without a Cesium ion token (e.g. OSM), replacing a flat `EllipsoidTerrainProvider`; falls back to the flat provider if the endpoint can't be reached. (2) The server-side `/api/terrain/heights` proxy (disk-cached, serve-stale) resolves per-point ellipsoidal ground height for entity placement. Both are best-effort with a keyless-safe fallback (bundled EGM96 geoid math) if Re:Earth is unreachable.
 - **OSRM on the FOSSGIS routing servers.** Keyless (no API key). Every route is requested by a person: clicking A and B in the Directions layer, or a voice "route from A to B". The server-side `/api/route` proxy sends an identifying `User-Agent`, pins the upstream host, accepts 2-12 coordinates, rejects any leg over 600 km or a total over 2,500 km, caps the buffered response at 8 MB, times the upstream out at 12 s, rate-limits per client, caches each route for 10 minutes, and coalesces identical requests that are in flight at the same time. Turn-by-turn maneuvers are asked for only when a caller wants them (`steps=1`), so the callers that do not read them send the smaller request. The "fix the map" link the policy asks for is in the Data attribution popover beside the OpenStreetMap credit.
 - **Global Context installation context.** `/api/military-installations` queries only an allow-listed subset of OSM `military=*` and `landuse=military` features inside a maximum 10° non-dateline viewport. It caches and may serve stale mapped context, but it is neither a global installation database nor evidence of capability, activity, or absence. User-requested Google Places results remain separately sourced candidates unless their returned types explicitly establish military classification; generic offices, museums, and similarly ambiguous matches are excluded from military proximity counts.
-- **Place search.** Named-place fly-to uses Google Geocoding when a Maps key is configured, then Photon's public instance, then `/api/geocode` (Nominatim search) when neither answers. `/api/geocode` shares the cockpit's Nominatim queue at no more than one request per second, sends an identifying `User-Agent` and `Referer`, caches answers for five minutes, shares one upstream call between identical searches already in flight, bounds the queue so a burst is refused rather than held, and drops a queued search whose caller has given up. It asks for one result per search and is not used for systematic or bulk queries.
+- **Place search.** Named-place fly-to uses Google Geocoding when a Maps key is configured, then Photon's public instance, then `/api/geocode` (Nominatim search) when neither answers, then the bundled offline gazetteer (below) as the final, network-free fallback. `/api/geocode` shares the cockpit's Nominatim queue at no more than one request per second, sends an identifying `User-Agent` and `Referer`, caches answers for five minutes, shares one upstream call between identical searches already in flight, bounds the queue so a burst is refused rather than held, and drops a queued search whose caller has given up. It asks for one result per search and is not used for systematic or bulk queries.
 - **Cockpit regional briefing.** `/api/regional-brief` rounds aircraft coordinates into 0.1° cache cells, caches results for five minutes, and serializes Nominatim calls at no more than one request per second. Google News RSS is queried with the resolved locality/region first; GDELT is used only when that RSS query fails or is empty. Google's published Google News terms restrict that source to personal, noncommercial use, so commercial deployments must disable/replace it or obtain separate permission; GDELT permits commercial dataset use with citation. The Data attribution popover identifies the active headline sources; article links retain publisher attribution. Headlines are location-query matches, not verified incidents, risk rankings, or evidence that a location is safe. Empty, partial, stale, and unavailable source states remain distinct. Open-Meteo supplies current conditions independently of the news source. `WX OFF` disables cockpit weather rendering only; the Local Info briefing still fetches its source-backed weather values and displays the required linked Open-Meteo credit.
 - **Dynamic weather presentation.** While cockpit mode is active, `/api/weather-effects` requests current Open-Meteo observations for the aircraft/camera location, rounds coordinates into 0.1° cache cells, caches results for five minutes, and may retain a stale observation for up to 30 minutes during a transient outage. WMO condition code selects the visual family; observed cloud cover, precipitation, visibility, wind speed, and wind direction bound its strength and motion. Missing or expired weather renders no synthetic atmospheric effect, and normal globe view never renders the weather overlay.
 
@@ -100,6 +100,7 @@ The [Bhote Koshi event pack](public/events/bhote-koshi-2026/README.md), under `p
 | **TeleGeography Submarine Cable Map** (712 cables + 1,917 landing points)   | `telegeography_submarine_cables/` | **CC BY-NC-SA 3.0**                                                                                       | ❌ **NonCommercial — remove for commercial use** | "© TeleGeography — submarinecablemap.com"                                   |
 | **Natural Earth physical regions** (1,046 land + 292 marine named polygons) | `natural_earth/`                  | **Public domain**                                                                                         | ✅ (no restrictions)                             | "Made with Natural Earth" (courtesy credit — not legally required)          |
 | **DataSF Analysis Neighborhoods** (41 SF neighborhood polygons)             | `neighborhoods/`                  | **PDDL 1.0** (public domain)                                                                              | ✅ (no restrictions)                             | "City & County of San Francisco — DataSF" (courtesy — not legally required) |
+| **Offline gazetteer** (177 countries + 243 major cities)                    | `gazetteer/`                      | **Public domain**                                                                                          | ✅ (no restrictions)                             | "Natural Earth" (courtesy credit — not legally required)                   |
 | **CCTV ground heights** (3,445 cameras)                                     | `cctv_ground_heights/`            | Precomputed camera placement heights, aligned to work with Google Photorealistic 3D Tiles (folder README) | —                                                | —                                                                           |
 
 ### ⚠️ TeleGeography is bundled but NonCommercial
@@ -169,6 +170,26 @@ Natural Earth is **public domain** (no permission needed, no attribution legally
 https://www.naturalearthdata.com/about/terms-of-use/). We credit anyway: "Made with Natural
 Earth". Registration in the in-app `dataCredits.js` attribution list ships with the resolver
 wiring (see below).
+
+### Offline gazetteer (`gazetteer/`)
+
+Curated from the **Natural Earth 110m cultural vectors** (same canonical
+`nvkelso/natural-earth-vector` repo as the physical-region pack above, commit
+`ca96624a56bd078437bca8184e78163e5039ad19`, fetched 2026-09-14):
+`ne_110m_admin_0_countries` → `countries.json` (177 sovereign states/major
+territories) and `ne_110m_populated_places_simple` → `cities.json` (243
+national capitals + major world cities). No polygon geometry is kept — just a
+label point, a bounding box, and name/code fields — so the pair stays under
+70 KB combined. Backs `src/data/gazetteer.js`'s offline lookup, which
+`searchAndFlyTo()` (`src/locations.js`) falls back to when no Google Maps API
+key is configured or a live geocode misses — so searching "Australia" (or any
+common country/major-city name) works with no network dependency. See
+[`gazetteer/README.md`](src/data/local_data/gazetteer/README.md) for the
+antimeridian-bbox handling and build details.
+
+Natural Earth is **public domain** (no permission needed, no attribution
+legally required). We credit anyway: registered dynamically the first time
+the pack resolves a search (`GAZETTEER_CREDIT` in `src/data/dataCredits.js`).
 
 ### DataSF Analysis Neighborhoods (`neighborhoods/`)
 

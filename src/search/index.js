@@ -9,6 +9,7 @@ export { createPhotonGeocoder } from '../keylessGeocoder.js';
 export { createDefaultPlaceSearch } from './defaults.js';
 export { createCoordinateGeocoder } from './coordinateGeocoder.js';
 export { createPresetGeocoder } from './presetGeocoder.js';
+export { createGazetteerGeocoder } from './gazetteerGeocoder.js';
 export {
   parseCoordinateQuery,
   formatCoordinateLabel,
